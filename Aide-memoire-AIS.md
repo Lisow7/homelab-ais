@@ -10,7 +10,8 @@
 
 - [Bloc 1 — Monter & administrer un serveur Ubuntu](#bloc-1) ✅ **TERMINÉ**
 - [Bloc 2 — Réseaux](#bloc-2) ✅ **TERMINÉ**
-- *Git & GitHub — (en cours)*
+- [Git & GitHub](#git) ✅ **TERMINÉ**
+- [Bloc 3 — Sécurité (SSH par clé + durcissement)](#bloc-3) 🚧 **EN COURS**
 
 > **🧭 Réflexes transverses** (valables tout le temps) :
 > - 🔇 **Le silence = succès.** Une commande qui réussit n'affiche souvent rien.
@@ -230,7 +231,91 @@ exit                               # revenir à mon compte
 ---
 ---
 
-## GIT & GITHUB — *(à compléter)*
+<a name="git"></a>
+## GIT & GITHUB ✅
+
+### 🎯 Ma phrase d'entretien
+> « Je versionne mes projets avec Git et je les publie sur GitHub : j'installe et configure Git, je crée un dépôt, et j'utilise le cycle **add → commit → push** pour suivre et partager mon travail. Mon portfolio est public sur GitHub. »
+
+---
+
+### 🧠 L'idée en une image
+
+- **Git** = un « historique de sauvegardes » de mon projet, sur **mon PC**.
+- **GitHub** = le coffre **en ligne** où je publie ce projet (visible des recruteurs si **public**).
+
+| Mot | Sens |
+|---|---|
+| **dépôt** (*repo*) | Le dossier de projet versionné |
+| **commit** | Une sauvegarde datée et signée, avec un message |
+| **branche `main`** | La ligne de travail principale (par défaut) |
+| **`(main)` dans le prompt** | Repère Git Bash : « je suis **dans** un dépôt Git » |
+
+---
+
+### 1️⃣ Installation & configuration (une seule fois)
+
+| Commande | Rôle |
+|---|---|
+| `git --version` | Vérifier que Git est installé |
+| `git config --global user.name "Prénom Nom"` | Mon identité (signe mes commits) |
+| `git config --global user.email "mail@github"` | ⚠️ **l'email du compte GitHub** (rattache les commits au profil) |
+| `git config --global --list` | Vérifier ma config |
+
+> 🧠 Sous Windows, on travaille dans **Git Bash** = un terminal façon Linux (`cd`, `ls`, `pwd` y marchent).
+
+---
+
+### 2️⃣ Le cycle Git fondamental (à graver — 90% de l'usage)
+
+> 📥 `clone` → ✏️ *je modifie* → ➕ `add` → 💾 `commit` → 📤 `push`
+
+| Commande | Rôle |
+|---|---|
+| `git clone <url>` | Rapatrier un repo GitHub sur mon PC (1ʳᵉ fois : connexion par navigateur) |
+| `git status` | Où j'en suis ? (**rouge** = non suivi · **vert** = prêt à committer) |
+| `git add .` | Sélectionner **tous** les changements (le `.` = tout) |
+| `git commit -m "message clair"` | Enregistrer une sauvegarde avec un message |
+| `git push` | Envoyer mes commits vers GitHub |
+| `git pull` | Récupérer les changements **depuis** GitHub |
+| `git log --oneline` | Voir l'historique des commits |
+| `git mv ancien nouveau` | **Renommer** un fichier proprement (Git comprend que c'est un renommage) |
+
+---
+
+### 3️⃣ Créer un dépôt sur GitHub
+
+`+` (haut-droite) → **New repository** → nom en **minuscules-avec-tirets** → **Public** ✅ → cocher **Add a README** → **Create repository**.
+
+> 🧠 Public = visible des recruteurs (c'est le but du portfolio). Privé = personne ne le voit.
+
+---
+
+### 🐞 Mémo des erreurs / pièges vécus (Git)
+
+| Message / symptôme | Cause | Correction |
+|---|---|---|
+| `warning: LF will be replaced by CRLF` | Windows et Linux gèrent les **fins de ligne** différemment | **Normal**, Git harmonise sans rien casser → ignorer |
+| Noms de fichiers avec **espaces** | `Bloc 2.md` → oblige des guillemets `"…"` et complique les liens | Renommer en **`tirets`** : `git mv "Bloc 2.md" "Bloc-2.md"` |
+| GitHub **refuse le mot de passe** au `push` | L'auth par mot de passe n'existe plus | Connexion par **navigateur** (Credential Manager) ou *token* |
+| Le prompt n'affiche pas `(main)` | Je ne suis pas dans le dossier du repo | `cd` dans le dossier cloné |
+
+---
+
+### 📌 Infrastructure de référence & points de reprise (Git)
+
+| Élément | Valeur |
+|---|---|
+| Dépôt | `github.com/Lisow7/homelab-ais` (**public**) |
+| Contenu | `Bloc-1_Homelab-Linux.md` · `Bloc-2_Labo-Reseaux-Packet-Tracer.md` · `Aide-memoire-AIS.md` · `Labo-Reseaux-AIS.pkt` |
+| Copie locale | `C:\Users\Antoi\Desktop\homelab-ais` |
+
+> 🔜 **Points de reprise / prochaines étapes :**
+> - Ajouter un dossier `captures/` avec les screenshots du labo (topologie + ping).
+> - Réutiliser le cycle `add → commit → push` à chaque nouveau livrable de bloc.
+
+---
+---
 
 <a name="bloc-2"></a>
 ## BLOC 2 — RÉSEAUX ✅
@@ -379,6 +464,126 @@ Découper un réseau = **emprunter des bits** à la partie machine pour créer d
 > - **Git & GitHub** : publier le homelab Linux + ce labo réseau (en cours).
 > - Passer la VM en **Pont** puis **SSH depuis Windows** (début du Bloc 3) ; en profiter pour relancer `traceroute` et voir les vrais sauts.
 > - Bloc 3 — Sécurité Linux (SSH par clé, UFW, Fail2Ban, ANSSI/RGPD).
+
+---
+---
+
+<a name="bloc-3"></a>
+## BLOC 3 — SÉCURITÉ 🚧
+
+> Sous-parties : **SSH par clé** ✅ · **Durcissement SSH** ✅ · UFW (à venir) · Fail2Ban (à venir) · ANSSI/RGPD (à venir).
+
+### 🎯 Ma phrase d'entretien
+> « Je sécurise un serveur Linux exposé : accès SSH par clé uniquement (root désactivé, mot de passe refusé), dans une démarche alignée sur les bonnes pratiques de l'ANSSI. Je sais diagnostiquer la config réellement appliquée avec `sshd -T` et résoudre les conflits de fichiers *drop-in*. »
+
+---
+
+### 1️⃣ Passer la VM en réseau Pont (prérequis)
+
+Le mode **NAT** cache la VM derrière un réseau privé (`10.0.2.x`) → injoignable depuis Windows. Le mode **Pont** la branche sur le vrai réseau local → elle reçoit une IP de la box (ex. `192.168.1.35`), comme un poste physique.
+
+| Étape | Action |
+|---|---|
+| Éteindre la VM | `sudo poweroff` |
+| VirtualBox | `serveur-ais` → Configuration → **Réseau** → Carte 1 |
+| Mode | **Accès par pont** *(Bridged Adapter)* |
+| Nom | la **carte physique active** (Ethernet `Realtek...` ou Wi-Fi) |
+| Vérifier (dans la VM) | `ip a` → chercher `inet 192.168.x.x` sur `enp0s3` |
+
+> 🧠 Bonus : le mode Pont **répare aussi `traceroute`** (qui ne voyait qu'un saut en NAT).
+
+---
+
+### 2️⃣ Authentification par clé SSH (depuis Windows)
+
+**Le principe :** une paire de clés liées. La **privée** reste secrète sur Windows (ne sort jamais). La **publique** (copiable) est déposée sur la VM. Au login, la VM lance un défi que **seule la clé privée peut résoudre** — aucun secret ne circule, plus de mot de passe.
+
+| Commande (PowerShell, côté Windows) | Rôle |
+|---|---|
+| `ssh-keygen -t ed25519` | Générer la paire (`ed25519` = algo moderne recommandé) |
+| `cat $env:USERPROFILE\.ssh\id_ed25519.pub` | Afficher la clé **publique** (faite pour être partagée) |
+| `ssh lisow@<IP>` | Se connecter (1ʳᵉ fois : taper `yes` pour enregistrer l'empreinte) |
+
+**Déposer la clé publique sur la VM (en une commande) :**
+```powershell
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh lisow@192.168.1.35 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+```
+> 🧠 `>>` **ajoute** au fichier `authorized_keys` (sans écraser). Les `chmod 700/600` sont **obligatoires** : SSH **refuse** les clés si les droits du dossier `.ssh` sont trop ouverts.
+> 🧠 `~/.ssh/known_hosts` (côté Windows) : empreinte de chaque serveur connu. Si elle **change** sans raison → SSH bloque (protection anti-usurpation / MITM).
+
+---
+
+### 3️⃣ Durcissement SSH (fermer les portes)
+
+But : **condamner le mot de passe et le compte root**, ne laisser que la clé.
+
+**Écrire la config sans éditeur** (drop-in dédié, on ne touche pas au fichier d'origine) :
+```bash
+sudo tee /etc/ssh/sshd_config.d/99-durcissement.conf > /dev/null <<'EOF'
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+KbdInteractiveAuthentication no
+EOF
+```
+
+| Directive | Effet |
+|---|---|
+| `PermitRootLogin no` | Interdit la connexion directe en **root** |
+| `PasswordAuthentication no` | Refuse l'auth par **mot de passe** |
+| `PubkeyAuthentication yes` | Autorise l'auth par **clé** |
+| `KbdInteractiveAuthentication no` | Coupe le canal **clavier-interactif** (sinon le mot de passe peut passer par là) |
+
+**Toujours dans cet ordre — valider AVANT d'appliquer :**
+```bash
+sudo sshd -t                    # test syntaxe (silence = OK)
+sudo systemctl reload ssh       # appliquer (reload ne coupe PAS les sessions en cours)
+```
+
+> ⚠️ **Règle d'or :** ne JAMAIS fermer la session SSH actuelle avant d'avoir vérifié dans une **2ᵉ fenêtre** que la nouvelle config marche. C'est le filet de sécurité contre l'auto-verrouillage.
+
+**Vérifier la config RÉELLEMENT appliquée** (commande reine) :
+```bash
+sudo sshd -T | grep -iE "passwordauthentication|permitrootlogin|kbdinteractive|pubkeyauthentication"
+```
+
+**Preuves de bon fonctionnement :**
+```bash
+ssh lisow@192.168.1.35                                  # → entre SANS mot de passe (clé)
+ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no lisow@192.168.1.35
+# → doit répondre : Permission denied (publickey)  ✅ (mot de passe bien refusé)
+```
+
+---
+
+### 🐞 Mémo des erreurs vécues (Bloc 3)
+
+| Message / symptôme | Cause | Correction |
+|---|---|---|
+| nano fait « bip » et ne réagit pas | La fenêtre n'a pas le focus / touches interceptées | Fermer la fenêtre (rien n'est enregistré) → préférer `tee` au lieu de nano |
+| `id_ed25519 already exists ... Overwrite (y/n)?` | Une clé existe déjà | Répondre **`n`** (ne PAS écraser, ça détruirait l'ancienne) — on la réutilise |
+| `key already exists` au `ssh-keygen` | idem | Réutiliser la clé en place ; copier juste sa partie `.pub` |
+| **Mot de passe ACCEPTÉ malgré `PasswordAuthentication no`** | Conflit de drop-ins : `50-cloud-init.conf` (`PasswordAuthentication yes`) gagne car **premier vu = gagnant** (ordre alphabétique) | Neutraliser l'intrus : `sudo sed -i 's/^/#/' /etc/ssh/sshd_config.d/50-cloud-init.conf` puis reload |
+| `99-durcissement.conf.save` traîne | Résidu laissé par nano | `sudo rm` du fichier `.save` (SSH risque de le lire) |
+| `sudo: Sorry, try again` | Faute de frappe dans le mot de passe `sudo` | Retaper (invisible) ; `Ctrl+C` pour annuler |
+
+> 🧠 **LA leçon du bloc :** `sudo sshd -T` montre la config *effectivement* appliquée après lecture de **tous** les fichiers `sshd_config.d/*.conf`. Pour un réglage, **le premier fichier vu (ordre alpha) l'emporte** — d'où l'intérêt du préfixe numérique (`50-`, `99-`).
+
+---
+
+### 📌 Infrastructure de référence & points de reprise (Bloc 3)
+
+| Élément | Valeur |
+|---|---|
+| Réseau VM | **Pont** sur Ethernet `Realtek` — IP `192.168.1.35/24` (DHCP box) |
+| Accès | SSH **par clé `ed25519`** depuis Windows (PowerShell / OpenSSH natif) |
+| Config durcie | `/etc/ssh/sshd_config.d/99-durcissement.conf` (+ `50-cloud-init.conf` neutralisé) |
+| État vérifié | root `no` · mot de passe `no` · clé `yes` · `Permission denied (publickey)` ✅ |
+
+> 🔜 **Points de reprise / prochaines étapes :**
+> - **UFW** : pare-feu en politique *deny by default*, n'ouvrir que le port **22** (SSH).
+> - **Fail2Ban** : bannir les IP qui forcent SSH *(note Ubuntu 24.04 : la jail `sshd` est déjà en backend `systemd`/journald par défaut)*.
+> - **ANSSI / RGPD** : culture sécu (recommandations d'hygiène, durcissement, journalisation).
 
 ---
 ---
