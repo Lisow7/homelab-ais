@@ -11,7 +11,7 @@
 - [Bloc 1 — Monter & administrer un serveur Ubuntu](#bloc-1) ✅ **TERMINÉ**
 - [Bloc 2 — Réseaux](#bloc-2) ✅ **TERMINÉ**
 - [Git & GitHub](#git) ✅ **TERMINÉ**
-- [Bloc 3 — Sécurité (SSH par clé + durcissement)](#bloc-3) 🚧 **EN COURS**
+- [Bloc 3 — Sécurité (SSH, UFW, Fail2Ban, ANSSI/RGPD)](#bloc-3) ✅ **TERMINÉ**
 
 > **🧭 Réflexes transverses** (valables tout le temps) :
 > - 🔇 **Le silence = succès.** Une commande qui réussit n'affiche souvent rien.
@@ -469,9 +469,9 @@ Découper un réseau = **emprunter des bits** à la partie machine pour créer d
 ---
 
 <a name="bloc-3"></a>
-## BLOC 3 — SÉCURITÉ 🚧
+## BLOC 3 — SÉCURITÉ ✅
 
-> Sous-parties : **SSH par clé** ✅ · **Durcissement SSH** ✅ · UFW (à venir) · Fail2Ban (à venir) · ANSSI/RGPD (à venir).
+> Sous-parties : **SSH par clé** ✅ · **Durcissement SSH** ✅ · **UFW** ✅ · **Fail2Ban** ✅ · **ANSSI/RGPD** ✅.
 
 ### 🎯 Ma phrase d'entretien
 > « Je sécurise un serveur Linux exposé : accès SSH par clé uniquement (root désactivé, mot de passe refusé), dans une démarche alignée sur les bonnes pratiques de l'ANSSI. Je sais diagnostiquer la config réellement appliquée avec `sshd -T` et résoudre les conflits de fichiers *drop-in*. »
@@ -556,6 +556,87 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no lisow@192.16
 
 ---
 
+### 4️⃣ Pare-feu UFW (deny by default)
+
+Principe : **tout bloqué en entrée, sauf ce qu'on autorise**. On n'ouvre que le port 22.
+
+> ⚠️ **Piège mortel :** activer UFW **avant** d'autoriser SSH = auto-verrouillage. Ordre obligatoire : autoriser SSH → **puis** activer.
+
+```bash
+sudo ufw default deny incoming     # tout ce qui entre est refusé
+sudo ufw default allow outgoing    # la VM peut sortir librement
+sudo ufw allow OpenSSH             # SEULE exception : le port 22
+sudo ufw show added                # vérifier la règle AVANT d'activer
+sudo ufw enable                    # activer (répondre y) — reste ouvert car SSH autorisé
+sudo ufw status verbose            # doit montrer Status: active + 22/tcp ALLOW
+```
+
+| Commande | Rôle |
+|---|---|
+| `sudo ufw status verbose` | État complet (politique + règles) |
+| `sudo ufw allow <port>/tcp` | Ouvrir un port précis (ex. `80/tcp`) |
+| `sudo ufw delete allow <règle>` | Retirer une règle |
+| `sudo ufw disable` | Désactiver le pare-feu |
+
+> 🧠 Principe ANSSI : **réduire la surface d'attaque**. Un scanner ne verra qu'un seul port ouvert (22) au lieu de plusieurs.
+
+---
+
+### 5️⃣ Fail2Ban (anti-bruteforce)
+
+Surveille les journaux, **compte les échecs par IP**, et **bannit** au pare-feu qui dépasse un seuil. Sur Ubuntu 24.04, il est **pré-configuré** (jail `sshd` activée, backend `journald`) dès l'installation.
+
+```bash
+sudo apt install -y fail2ban        # installé + démarré automatiquement
+sudo systemctl status fail2ban      # doit être active (running)
+sudo fail2ban-client status         # liste des jails → sshd
+sudo fail2ban-client status sshd    # détail : échecs, IP bannies, Journal matches
+```
+
+**Config perso** (jamais toucher les `.conf` → créer `jail.local`) :
+```bash
+sudo tee /etc/fail2ban/jail.local > /dev/null <<'EOF'
+[DEFAULT]
+ignoreip = 127.0.0.1/8 ::1 192.168.1.0/24   # NE JAMAIS bannir mon reseau local
+maxretry = 4
+findtime = 10m
+bantime  = 1h
+bantime.increment = true                     # recidive = ban qui double
+
+[sshd]
+enabled = true
+EOF
+sudo fail2ban-client -t                       # tester la syntaxe (OK: ...successful)
+sudo systemctl reload fail2ban
+```
+
+| Commande | Rôle |
+|---|---|
+| `sudo fail2ban-client set sshd banip <IP>` | **Bannir** une IP à la main |
+| `sudo fail2ban-client set sshd unbanip <IP>` | **Débannir** une IP (ex. un collègue) |
+| `sudo fail2ban-client -t` | Tester la config avant reload |
+
+> 🧠 **Réglage qui sauve :** `ignoreip = ... 192.168.1.0/24` évite de se **bannir soi-même** en testant. Le piège n°1 de Fail2Ban en prod.
+> 🧠 Chez moi le mot de passe SSH est déjà coupé → Fail2Ban sert de **défense en profondeur** et réduit le bruit dans les logs.
+
+---
+
+### 6️⃣ Culture ANSSI / RGPD
+
+**ANSSI** = agence française de cybersécurité. Son **Guide d'hygiène informatique** = 42 mesures. Chaque action du bloc coche une règle :
+
+| Action réalisée | Principe ANSSI |
+|---|---|
+| SSH par clé, root off | **Authentifier & contrôler les accès** (authentification forte) |
+| UFW deny by default | **Sécuriser le réseau** (réduire la surface d'attaque) |
+| Fail2Ban + journald | **Superviser, auditer, réagir** (journalisation) |
+| L'ensemble empilé | **Défense en profondeur** |
+
+> 💼 Référence à citer : note technique ANSSI **« Recommandations pour un usage sécurisé d'(Open)SSH »** (août 2016) — mon durcissement SSH la suit à la lettre.
+> ⚖️ **RGPD** : sécuriser un serveur qui traite des données personnelles = obligation légale (**art. 32** : mesures techniques appropriées ; **art. 33** : notifier la CNIL sous 72 h en cas de fuite). L'hygiène ANSSI = la mise en œuvre concrète du RGPD.
+
+---
+
 ### 🐞 Mémo des erreurs vécues (Bloc 3)
 
 | Message / symptôme | Cause | Correction |
@@ -566,6 +647,9 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no lisow@192.16
 | **Mot de passe ACCEPTÉ malgré `PasswordAuthentication no`** | Conflit de drop-ins : `50-cloud-init.conf` (`PasswordAuthentication yes`) gagne car **premier vu = gagnant** (ordre alphabétique) | Neutraliser l'intrus : `sudo sed -i 's/^/#/' /etc/ssh/sshd_config.d/50-cloud-init.conf` puis reload |
 | `99-durcissement.conf.save` traîne | Résidu laissé par nano | `sudo rm` du fichier `.save` (SSH risque de le lire) |
 | `sudo: Sorry, try again` | Faute de frappe dans le mot de passe `sudo` | Retaper (invisible) ; `Ctrl+C` pour annuler |
+| Commandes tapées dans la mauvaise fenêtre | Confusion VM (invite verte) vs Windows/Git Bash (`No such file` / `not a git repository`) | Vérifier l'invite : `lisow@serveur-ais` = VM · `PS C:\` = Windows · `MINGW64 (main)` = Git |
+| `Labo-Reseaux-AIS.pkt` apparaît « modifié » sans raison | Packet Tracer réécrit des métadonnées à l'ouverture | `git add` en **nommant** les fichiers (jamais `git add .`) ; `git restore` pour annuler |
+| `WARNING 'allowipv6' not defined` (Fail2Ban) | Avertissement bénin | Ignorer (valeur `auto` prise par défaut) |
 
 > 🧠 **LA leçon du bloc :** `sudo sshd -T` montre la config *effectivement* appliquée après lecture de **tous** les fichiers `sshd_config.d/*.conf`. Pour un réglage, **le premier fichier vu (ordre alpha) l'emporte** — d'où l'intérêt du préfixe numérique (`50-`, `99-`).
 
@@ -578,12 +662,15 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no lisow@192.16
 | Réseau VM | **Pont** sur Ethernet `Realtek` — IP `192.168.1.35/24` (DHCP box) |
 | Accès | SSH **par clé `ed25519`** depuis Windows (PowerShell / OpenSSH natif) |
 | Config durcie | `/etc/ssh/sshd_config.d/99-durcissement.conf` (+ `50-cloud-init.conf` neutralisé) |
-| État vérifié | root `no` · mot de passe `no` · clé `yes` · `Permission denied (publickey)` ✅ |
+| Pare-feu | **UFW** actif, deny by default, seul `22/tcp (OpenSSH)` ouvert |
+| Anti-bruteforce | **Fail2Ban** actif, jail `sshd`/journald, `jail.local` (LAN en `ignoreip`) |
+| État vérifié | root `no` · mot de passe `no` (`Permission denied (publickey)`) · UFW `active` · Fail2Ban `running` ✅ |
 
 > 🔜 **Points de reprise / prochaines étapes :**
-> - **UFW** : pare-feu en politique *deny by default*, n'ouvrir que le port **22** (SSH).
-> - **Fail2Ban** : bannir les IP qui forcent SSH *(note Ubuntu 24.04 : la jail `sshd` est déjà en backend `systemd`/journald par défaut)*.
-> - **ANSSI / RGPD** : culture sécu (recommandations d'hygiène, durcissement, journalisation).
+> - Bloc 3 **terminé et publié** (SSH par clé, durcissement, UFW, Fail2Ban, ANSSI/RGPD).
+> - Continuer le programme des modules (bloc suivant selon la feuille de route).
+> - Côté CFA à venir : Windows Server, Active Directory, supervision avancée, PowerShell/Ansible, réponse à incident.
+> - En parallèle : recherche d'alternance (contrat avant octobre).
 
 ---
 ---
