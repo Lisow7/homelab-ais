@@ -1,0 +1,7 @@
+services:
+  site-web:
+    image: mon-site:v1
+    ports:
+      - "8081:80"
+    volumes:
+      - ./contenu-web:/usr/share/nginx/html
