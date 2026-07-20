@@ -676,3 +676,164 @@ sudo systemctl reload fail2ban
 ---
 
 > *Structure réutilisable pour chaque nouveau bloc : 🎯 phrase d'entretien · tableaux de commandes · 🐞 mémo des erreurs · 📌 points de reprise.*
+
+---
+---
+
+<a name="bloc-4"></a>
+## BLOC 4 — DOCKER ✅
+
+> Sous-parties : **Installation** ✅ · **Images & conteneurs** ✅ · **Dockerfile** ✅ · **Volumes** ✅ · **docker-compose** ✅.
+
+### 🎯 Ma phrase d'entretien
+> « Je conteneurise des applications avec Docker : installation du moteur via le dépôt officiel, écriture de Dockerfile pour construire mes propres images, gestion des volumes pour la persistance des données, et orchestration avec docker-compose. »
+
+---
+
+### 1️⃣ Installation de Docker Engine (dépôt officiel)
+
+> 🧠 Le dépôt Ubuntu (`docker.io`) est souvent trop ancien → toujours utiliser le dépôt officiel Docker.
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+**Utiliser Docker sans `sudo` :**
+```bash
+sudo usermod -aG docker lisow   # puis déconnexion/reconnexion
+```
+
+| Commande | Rôle |
+|---|---|
+| `sudo systemctl status docker` | vérifier que le démon `dockerd` tourne |
+| `docker run hello-world` | test officiel de bon fonctionnement |
+| `docker --version` | version installée |
+
+---
+
+### 2️⃣ Vocabulaire de base
+
+| Mot | Sens |
+|---|---|
+| **Image** | modèle figé, en lecture seule (recette + ingrédients) |
+| **Conteneur** | instance en cours d'exécution d'une image (le plat préparé) |
+| **Dockerfile** | fichier texte qui décrit comment construire une image |
+| **Registre** (*registry*) | dépôt d'images, ex. Docker Hub |
+| **Volume** | espace de stockage externe au conteneur, pour la persistance |
+
+> 🧠 Contrairement à une VM, un conteneur **partage le noyau Linux de l'hôte** → pas d'hyperviseur, démarrage en secondes, empreinte mémoire minime.
+
+---
+
+### 3️⃣ Cycle de vie d'un conteneur
+
+```bash
+docker run -d --name mon-service -p 8080:80 nginx   # créer + démarrer
+docker ps                                             # conteneurs actifs
+docker ps -a                                          # tous (actifs + arrêtés)
+docker logs mon-service                               # voir les logs
+docker exec -it mon-service bash                      # entrer dans le conteneur
+docker stop mon-service                               # arrêter proprement
+docker start mon-service                              # redémarrer
+docker rm mon-service                                 # supprimer (doit être arrêté)
+docker images                                         # images en local
+```
+
+| Option de `docker run` | Rôle |
+|---|---|
+| `-d` | *detached* — tourne en arrière-plan |
+| `--name` | nom explicite du conteneur |
+| `-p hôte:conteneur` | mappe un port de la machine vers un port du conteneur |
+| `-v hôte:conteneur` | monte un volume (persistance) |
+
+---
+
+### 4️⃣ Construire sa propre image (Dockerfile)
+
+```dockerfile
+FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+```
+
+```bash
+docker build -t mon-site:v1 .        # construire (le "." = contexte = dossier courant)
+docker run -d --name mon-site -p 8081:80 mon-site:v1
+```
+
+> 🧠 `FROM` = image de base · `COPY` = copier un fichier local dans l'image · `-t nom:version` = tag de l'image construite.
+> 🧠 `alpine` = variante Linux ultra-légère (~40 Mo au lieu de ~190 Mo) — bon réflexe en production.
+
+---
+
+### 5️⃣ Volumes — persistance des données
+
+> ⚠️ **Sans volume**, tout ce qu'un conteneur écrit disparaît quand on le supprime (`docker rm`). Un conteneur doit rester **jetable et reproductible**.
+
+```bash
+docker run -d --name mon-site -p 8081:80 \
+  -v ~/mon-site-docker/contenu-web:/usr/share/nginx/html mon-site:v1
+```
+
+> 🧠 Format : `-v chemin_sur_l_hôte:chemin_dans_le_conteneur`. Une modification faite depuis l'hôte est visible instantanément dans le conteneur, et inversement — sans reconstruire l'image ni relancer le conteneur.
+
+---
+
+### 6️⃣ docker-compose — orchestrer plusieurs conteneurs
+
+Fichier `docker-compose.yml` (déclaratif, versionnable) :
+```yaml
+services:
+  site-web:
+    image: mon-site:v1
+    ports:
+      - "8081:80"
+    volumes:
+      - ./contenu-web:/usr/share/nginx/html
+```
+
+```bash
+docker compose up -d      # démarrer toute la stack définie dans le fichier
+docker compose ps         # état des services du projet
+docker compose logs       # logs de tous les services
+docker compose down       # tout arrêter + supprimer (conteneurs + réseau, pas les volumes)
+```
+
+> 🧠 Compose crée automatiquement un **réseau dédié** au projet et nomme les conteneurs `<dossier>-<service>-1`. Un seul fichier remplace des `docker run` à rallonge → base de l'**infrastructure as code**.
+
+---
+
+### 🐞 Mémo des erreurs vécues (Bloc 4)
+
+| Message / symptôme | Cause | Correction |
+|---|---|---|
+| `apt install -m 0755 -d ...` échoue | Confusion `apt install` (paquets) vs `install` (créer fichier/dossier avec droits) | `sudo install -m 0755 -d /etc/apt/keyrings` |
+| `Malformed entry ... (Component)` sur `apt update` | La substitution `$VERSION_CODENAME` a échoué au collage → ligne de dépôt incomplète (`ubuntu  stable` sans codename) | Réécrire la ligne avec le codename en dur : `... ubuntu noble stable` |
+| `Unable to locate package doker-buildx-plugin` | Faute de frappe dans un nom de paquet | Utiliser `Tab` pour autocompléter |
+| Modification perdue après `docker rm` + relance | Écriture faite **dans** le conteneur, sans volume monté | Toujours `-v` pour toute donnée qui doit survivre au conteneur |
+| Presse-papier ne fonctionne pas dans la console VirtualBox | Guest Additions non installées | Basculer sur une session **SSH** (PowerShell) pour le copier-coller |
+| `~` interprété comme `-` (`mkdir: invalid option -- '/'`) | Touche morte `~` sur clavier FR, mal validée | Taper `~` puis **Espace**, ou éviter le `~` (`cd` seul ramène au dossier perso) |
+
+---
+
+### 📌 Infrastructure de référence & points de reprise (Bloc 4)
+
+| Élément | Valeur |
+|---|---|
+| Docker Engine | 5:29.6.2 (dépôt officiel `download.docker.com`) |
+| Projet local (VM) | `~/mon-site-docker/` (Dockerfile, index.html, contenu-web/, docker-compose.yml) |
+| Image construite | `mon-site:v1` |
+| Services testés | Nginx officiel (port 8080) + image perso (port 8081, via compose) |
+| Dépôt GitHub | `Bloc-4-Docker/` dans `github.com/Lisow7/homelab-ais` |
+
+> 🔜 **Points de reprise / prochaines étapes :**
+> - Bloc 4 **terminé et publié** (installation, Dockerfile, volumes, docker-compose).
+> - Éventuel approfondissement futur (CFA) : registre privé, réseaux Docker multi-conteneurs, orchestration Kubernetes.
+> - Continuer le programme des modules (bloc suivant selon la feuille de route).
+> - En parallèle : recherche d'alternance (contrat avant octobre).
